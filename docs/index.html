@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Reloj del Apocalipsis – índice diario</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f5f3ee;--card:#fff;--tx:#1b1b1f;--mu:#6b6b73;--ln:#e2dfd6;--ac:#c4161c;--ok:#2a7a4b}
+:root:not([data-theme="light"]){}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1013;--card:#181a1f;--tx:#ececf0;--mu:#9a9aa6;--ln:#2a2d34;--ac:#ff4d52;--ok:#4cc38a}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1013;--card:#181a1f;--tx:#ececf0;--mu:#9a9aa6;--ln:#2a2d34;--ac:#ff4d52;--ok:#4cc38a}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 Georgia,'Times New Roman',serif}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:26px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px;letter-spacing:.04em;text-transform:uppercase;font-family:system-ui,sans-serif}
+.mu{color:var(--mu);font-size:13px}
+.grid{display:grid;gap:14px;grid-template-columns:1fr 1fr}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px;margin-top:14px}
+.big{font:700 44px/1 system-ui,sans-serif;color:var(--ac)}
+.row{display:flex;align-items:center;gap:8px;margin:7px 0;font:13px system-ui,sans-serif}
+.row b{width:92px;flex:none}.bar{flex:1;height:10px;background:var(--ln);border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ac)}
+.row span{width:76px;text-align:right;flex:none}
+.ann{border-left:3px solid var(--ac);padding:4px 10px;margin:8px 0}
+table{width:100%;border-collapse:collapse;font:13px system-ui,sans-serif}
+td,th{padding:6px 4px;border-bottom:1px solid var(--ln);text-align:left}
+.tag{font:11px system-ui,sans-serif;padding:1px 6px;border-radius:9px;border:1px solid var(--ln);color:var(--mu)}
+.tag.r{color:var(--ac);border-color:var(--ac)}
+.scroll{overflow-x:auto}
+.btn{display:inline-block;background:var(--ac);color:#fff;border-radius:8px;padding:8px 14px;font:13px system-ui,sans-serif;text-decoration:none;margin:6px 6px 0 0}
+textarea{width:100%;height:90px;background:var(--bg);color:var(--tx);border:1px solid var(--ln);border-radius:8px;padding:8px;font:12px monospace}
+button{background:var(--ac);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:13px system-ui,sans-serif;cursor:pointer;margin:6px 6px 0 0}
+pre{overflow-x:auto;background:var(--bg);padding:10px;border-radius:8px;font-size:12px;border:1px solid var(--ln)}
+svg text{fill:var(--tx);font-family:system-ui,sans-serif}
+</style>
+</head>
+<body>
+<main>
+<h1>Reloj del Apocalipsis · índice diario</h1>
+<div class="mu">Reconstrucción no oficial. El Bulletin of the Atomic Scientists fijó <b>85 s</b> el 27 de enero de 2026 y no usa una fórmula pública; aquí se estima la deriva diaria con un índice ponderado. <span id="today"></span></div>
+
+<div class="grid">
+ <div class="card" style="text-align:center">
+  <svg id="clk" viewBox="0 0 240 240" width="100%" style="max-width:300px"></svg>
+  <div class="big" id="sec">—</div>
+  <div class="mu" id="sub"></div>
+ </div>
+ <div class="card">
+  <h2>Factores (riesgo 0–100)</h2>
+  <div id="factors"></div>
+  <div class="mu" style="margin-top:8px">R = 0.40·N + 0.25·C + 0.15·B + 0.10·I + 0.10·G<br>Segundos = 85 · (100 − R) / (100 − R₀), con R₀ = índice de enero 2026.</div>
+ </div>
+</div>
+
+<div class="card"><h2>Anuncios y conclusiones</h2><div id="ann"></div></div>
+
+<div class="grid">
+ <div class="card"><h2>Medios y fiabilidad</h2><div class="scroll"><table id="src"></table></div>
+ <p class="mu">Los medios estatales (p. ej. RT) se incluyen con menor peso para contrastar narrativas de todas las partes. Los rumores (canales OSINT/Telegram, foros) pesan 0.3 y solo suben el índice si ≥3 medios los corroboran.</p></div>
+ <div class="card"><h2>Cómo leerlo</h2><p class="mu">El reloj oficial cambia como mucho una vez al año. La línea “estimada” es este índice diario: mide la presión de las noticias frente a la línea base de enero 2026, no es un veredicto del SASB. Cada titular lo evalúa una IA (riesgo de −5 a +5 y confiabilidad según fuente, estilo y replicación en medios confiables y extraoficiales); si la IA no está disponible, se usan palabras clave.</p></div>
+</div>
+
+<div class="card"><h2>Historial del reloj</h2>
+<div style="font:600 13px system-ui,sans-serif;margin:10px 0 2px">Cada 5 años (1947–2026, oficial)</div><svg id="h5" viewBox="0 0 300 130" width="100%"></svg><div class="mu" id="c5"></div>
+<div style="font:600 13px system-ui,sans-serif;margin:14px 0 2px">Último año</div><svg id="h1" viewBox="0 0 300 130" width="100%"></svg><div class="mu" id="c1"></div>
+<div style="font:600 13px system-ui,sans-serif;margin:14px 0 2px">Último mes (estimación diaria)</div><svg id="h30" viewBox="0 0 300 130" width="100%"></svg><div class="mu" id="c30"></div></div>
+<div class="card"><h2>Titulares procesados (últimos 45 días)</h2><div class="scroll"><table id="news"></table></div></div>
+
+<div class="card"><h2>Spider diario y carga de datos</h2>
+<p class="mu">Una página HTML no puede rastrear otros sitios (CORS y política de seguridad del navegador). Por eso el spider corre fuera, una vez al día (cron o GitHub Actions), acumula 45 días de titulares relevantes, calcula el índice y escribe <code>data.json</code> (titulares + historial diario). Una mini app Flask en PythonAnywhere lo sirve con CORS; pon su URL en la constante <code>API</code> de esta página. También puedes pegar el JSON aquí.</p>
+<textarea id="paste" placeholder='[{"src":"CNN","title":"...","date":"2026-11-02","rumor":0}]'></textarea>
+<button id="apply">Aplicar JSON</button><button id="copy">Copiar spider.py</button><button id="copy2">Copiar app.py</button>
+<details><summary>spider.py (PythonAnywhere → Tasks, diaria)</summary><pre id="py"># pip install --user feedparser   |   Tasks: OPENROUTER_API_KEY=sk-or-... python3 /home/USUARIO/spider.py
+# Sin OPENROUTER_API_KEY (o si la API falla) usa el análisis por palabras clave.
+# Verifica que openrouter.ai esté en la whitelist de tu cuenta.
+# Cuenta gratis: solo salen peticiones a sitios de la whitelist; revisa que
+# cada RSS esté permitido (los que fallen se omiten sin romper el resto).
+import feedparser, json, re, os, urllib.request, datetime as dt
+feedparser.USER_AGENT = "Mozilla/5.0 (investigacion; reloj-apocalipsis)"
+OUT = os.environ.get("DATA_PATH", "/home/USUARIO/data.json")
+D = dt.date
+FEEDS = {
+ "CNN": ("http://rss.cnn.com/rss/edition_world.rss", 0),
+ "NYTimes": ("https://rss.nytimes.com/services/xml/rss/nyt/World.xml", 0),
+ "BBC": ("http://feeds.bbci.co.uk/news/world/rss.xml", 0),
+ "RT": ("https://www.rt.com/rss/news/", 0),
+ "Radio Fórmula": ("https://www.radioformula.com.mx/rss", 0),   # verificar URL
+ "Reddit r/worldnews": ("https://www.reddit.com/r/worldnews/.rss", 1),  # rumor
+}
+REL = {"Reuters":.95,"NYTimes":.9,"BBC":.9,"CNN":.8,"Reforma":.8,"Radio Fórmula":.7,"RT":.5,"Reddit r/worldnews":.3}
+W = dict(N=.40, C=.25, B=.15, I=.10, G=.10)
+BASE = dict(N=78, C=70, B=55, I=60, G=75)
+STRUCT = [("N", 3), ("N", 2)]
+KW = {k: (re.compile(u, re.I), re.compile(d, re.I)) for k, (u, d) in {
+ "N": (r"nuclear|oreshnik|icbm|warhead|ojiva|misil|new start|escalat|escalada|nuke", r"arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad"),
+ "C": (r"heatwave|ola de calor|record temperature|wildfire|incendio|flood|inundaci|hurricane|huracán|emissions rise|coal", r"climate deal|acuerdo climático|emissions fall|renewable record|cop\d+ agree"),
+ "B": (r"pandemic|pandemia|outbreak|brote|h5n1|avian flu|gripe aviar|virus|bioweapon|lab leak", r"vaccine approved|vacuna aprobada|outbreak contained|brote controlado"),
+ "I": (r"artificial intelligence|inteligencia artificial|\bai\b|deepfake|autonomous weapon|agi|chatbot", r"ai treaty|ai regulation passed|regulaci[oó]n de ia|ai safety agreement"),
+ "G": (r"war|guerra|invasion|invasión|strike|ataque|sanction|sanciones|tension|tensión|ceasefire collapse|missile strike", r"ceasefire|alto el fuego|peace talks|negociaciones de paz|peace deal"),
+}.items()}
+
+def relevant(t):
+    return any(u.search(t) or d.search(t) for u, d in KW.values())
+
+def score(items, today):
+    adj = {k: 0.0 for k in W}
+    for f, v in STRUCT: adj[f] += v
+    hits = {k: {} for k in W}
+    aip = {k: 0.0 for k in W}
+    for n in items:
+        a = (today - D.fromisoformat(n["date"])).days
+        if a not in range(0, 46): continue
+        rel, dec = REL.get(n["src"], .5), .5 ** (a / 20)
+        if "ai" in n:
+            if n["ai"]["f"] in W:
+                aip[n["ai"]["f"]] += n["ai"]["risk"] / 5 * n["ai"]["rel"] * dec * 3
+            continue
+        for f, (u, d) in KW.items():
+            up, dn = u.search(n["title"]), d.search(n["title"])
+            if up or dn:
+                hits[f].setdefault(n["src"], []).append((-1 if dn else 1, rel, dec, n.get("rumor", 0)))
+    for f, h in hits.items():
+        corro = sum(1 for s in h if REL.get(s, .5) &gt; .35)
+        tot = 0
+        for s, lst in h.items():
+            for sev, rel, dec, rum in lst:
+                p = sev * rel * dec * 1.2
+                if rum and sev &gt; 0 and corro &lt; 3: p = 0
+                if corro &gt;= 3 and sev &gt; 0: p *= 1.25
+                tot += p
+        adj[f] += max(-15, min(15, tot + aip[f]))
+    R = sum(W[k] * max(0, min(100, BASE[k] + adj[k])) for k in W)
+    R0 = sum(W[k] * BASE[k] for k in W)
+    return round(max(1, min(600, 85 * (100 - R) / (100 - R0))), 1)
+
+# Modelo de OpenRouter: copia el "slug" exacto de openrouter.ai/models (ej. proveedor/modelo).
+# Puedes cambiarlo sin tocar el codigo con la variable OPENROUTER_MODEL.
+MODEL = os.environ.get("OPENROUTER_MODEL") or "openai/gpt-4o-mini"
+KEY = os.environ.get("OPENROUTER_API_KEY", "")
+PROMPT = """Eres analista de riesgo global para un índice tipo Reloj del Apocalipsis.
+Para cada titular devuelve SOLO una lista JSON de objetos:
+{"i": n, "f": "N|C|B|I|G|none", "risk": -5 a 5, "rel": 0 a 1, "flags": [...], "why": "máx. 15 palabras"}
+f: N nuclear, C clima, B biológico, I inteligencia artificial, G geopolítica.
+risk positivo aumenta el riesgo, negativo lo reduce, 0 si es irrelevante.
+rel = confiabilidad según: fuente (rumor=1 es extraoficial; los medios estatales tienen sesgo propio),
+estilo (lenguaje cargado, sensacionalismo, atribución anónima, falta de datos), replicación
+(rep = medios que lo repiten; rum = fuentes extraoficiales) y plausibilidad.
+Un hecho repetido por medios de bloques opuestos pesa más. Un rumor sin corroboración: rel máximo 0.3.
+flags posibles: sensacionalista, lenguaje_cargado, fuente_anonima, estatal, sin_corroborar,
+corroborado, opinion, propaganda_probable."""
+
+def toks(t):
+    return set(re.findall(r"\w{4,}", t.lower()))
+
+def replication(items):
+    T = [toks(n["title"]) for n in items]
+    for i, n in enumerate(items):
+        rep, rum = set(), set()
+        for j, m in enumerate(items):
+            if i == j or m["src"] == n["src"]: continue
+            u = T[i].union(T[j])
+            if u and len(T[i].intersection(T[j])) / len(u) &gt;= .3:
+                (rum if m.get("rumor") else rep).add(m["src"])
+        n["rep"], n["rum"] = sorted(rep), sorted(rum)
+
+def analyze(items):
+    if not KEY or not items: return
+    del items[120:]   # tope diario de costo
+    replication(items)
+    lines = [{"i": k, "src": n["src"], "rumor": n.get("rumor", 0), "title": n["title"],
+              "rep": n["rep"], "rum": n["rum"]} for k, n in enumerate(items)]
+    body = json.dumps({"model": MODEL, "max_tokens": 8000, "temperature": 0.2,
+        "messages": [{"role": "system", "content": PROMPT},
+                     {"role": "user", "content": json.dumps(lines, ensure_ascii=False)}]}).encode()
+    rq = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", body,
+        {"content-type": "application/json", "Authorization": "Bearer " + KEY,
+         "X-Title": "reloj-apocalipsis"})
+    try:
+        txt = json.load(urllib.request.urlopen(rq, timeout=180))["choices"][0]["message"]["content"]
+        res = json.loads(re.search(r"\[.*\]", txt, re.S).group(0))
+    except Exception as ex:
+        print("IA falló, se usan palabras clave:", ex); return
+    for r in res:
+        try:
+            n = items[int(r["i"])]
+            prior = REL.get(n["src"], .5)
+            ai = min(1, max(0, float(r["rel"])))
+            rsc = min(1, (len(n["rep"]) + .5 * len(n["rum"])) / 3)
+            n["ai"] = {"f": r["f"] if r["f"] in W else None,
+                       "risk": max(-5, min(5, float(r["risk"]))),
+                       "rel": round(.35 * prior + .40 * ai + .25 * rsc, 2),   # fuente + IA + replicación
+                       "flags": [str(x) for x in r.get("flags", [])][:4],
+                       "why": str(r.get("why", ""))[:120],
+                       "rep": len(n["rep"]), "rum": len(n["rum"])}
+        except Exception:
+            pass
+
+old = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else {}
+today = D.today()
+seen, arch = set(), []
+new = []
+for src, (url, rumor) in FEEDS.items():
+    try:
+        for e in feedparser.parse(url).entries[:80]:
+            if relevant(e.title):
+                new.append({"src": src, "title": e.title, "url": e.link,
+                            "date": today.isoformat(), "rumor": rumor})
+    except Exception as ex:
+        print(src, "falló:", ex)
+analyze(new)
+for n in new + old.get("news", []):
+    k = (n["src"], n["title"])
+    if k in seen or (today - D.fromisoformat(n["date"])).days &gt; 45: continue
+    seen.add(k); arch.append(n)
+hist = old.get("history", {})
+hist[today.isoformat()] = score(arch, today)
+json.dump({"updated": today.isoformat(), "news": arch, "history": hist},
+          open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
+</pre>
+<p class="mu">app.py (pestaña Web → Flask) sirve el JSON con CORS:</p>
+<pre id="py2">from flask import Flask, send_file
+app = Flask(__name__)
+
+@app.route("/data.json")
+def data():
+    r = send_file("/home/USUARIO/data.json", mimetype="application/json")
+    r.headers["Access-Control-Allow-Origin"] = "*"
+    r.headers["Cache-Control"] = "no-cache"
+    return r</pre></details></div>
+<div class="card"><h2>Apoya el proyecto</h2>
+<p class="mu">El spider, la IA y el hosting tienen costo. Los donativos y anuncios sostienen el proyecto y <b>nunca influyen en el índice ni en la confiabilidad asignada a un medio</b>.</p>
+<a class="btn" href="https://www.patreon.com/TU_USUARIO" target="_blank" rel="noopener">Patreon</a><a class="btn" href="https://www.paypal.com/donate/?hosted_button_id=TU_ID" target="_blank" rel="noopener">Donar con PayPal</a>
+<div style="margin-top:12px"><div class="mu" style="font-size:11px">Publicidad</div>
+<div id="ad" style="border:1px dashed var(--ln);border-radius:8px;min-height:90px;display:flex;align-items:center;justify-content:center"><!-- pega aquí tu código de anuncios (p. ej. AdSense) --><span class="mu">Espacio publicitario</span></div></div></div>
+<p class="mu">Estimación experimental con pesos propuestos; no sustituye el juicio del Science and Security Board.</p>
+</main>
+<script>
+const W={N:.40,C:.25,B:.15,I:.10,G:.10};
+const NAME={N:'Nuclear',C:'Clima',B:'Biológico',I:'IA',G:'Geopolítica'};
+const BASE={N:78,C:70,B:55,I:60,G:75};
+const REL={'Reuters':.95,'NYTimes':.9,'BBC':.9,'CNN':.8,'Reforma':.8,'Radio Fórmula':.7,'RT':.5,'Reddit r/worldnews':.3};
+const SHOWN=['CNN','NYTimes','BBC','Reuters','Reforma','Radio Fórmula','RT'];
+const STRUCT=[
+ {f:'N',d:3,t:'Expiró New START (5 feb 2026): sin límites a arsenales EE. UU.–Rusia',s:'The Defense Post'},
+ {f:'N',d:2,t:'Rusia usó dos veces el misil Oreshnik; la OTAN habla de “señalización nuclear” (abr 2026)',s:'Reuters vía Al-Monitor'}];
+const KW={
+ N:{u:/nuclear|oreshnik|icbm|warhead|ojiva|misil|new start|escalat|escalada|nuke/i,d:/arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad/i},
+ C:{u:/heatwave|ola de calor|record temperature|wildfire|incendio|flood|inundaci|hurricane|huracán|emissions rise|coal/i,d:/climate deal|acuerdo climático|emissions fall|renewable record|cop\d+ agree/i},
+ B:{u:/pandemic|pandemia|outbreak|brote|h5n1|avian flu|gripe aviar|virus|bioweapon|lab leak/i,d:/vaccine approved|vacuna aprobada|outbreak contained|brote controlado/i},
+ I:{u:/artificial intelligence|inteligencia artificial|\bai\b|deepfake|autonomous weapon|agi|chatbot/i,d:/ai treaty|ai regulation passed|regulaci[oó]n de ia|ai safety agreement/i},
+ G:{u:/war|guerra|invasion|invasión|strike|ataque|sanction|sanciones|tension|tensión|ceasefire collapse|missile strike/i,d:/ceasefire|alto el fuego|peace talks|negociaciones de paz|peace deal/i}};
+const $=id=>document.getElementById(id);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const todayISO=new Date().toISOString().slice(0,10);
+let NEWS=[];
+function age(d){return Math.max(0,(Date.parse(todayISO)-Date.parse(d))/864e5)}
+function compute(){
+ const adj={N:0,C:0,B:0,I:0,G:0},per={},aiTot={},hits={N:{},C:{},B:{},I:{},G:{}},rows=[];
+ STRUCT.forEach(s=>adj[s.f]+=s.d);
+ NEWS.filter(n=>n.title&&age(n.date||todayISO)<=45).forEach(n=>{
+  const rel=REL[n.src]??.5,dec=Math.pow(.5,age(n.date||todayISO)/20);
+  per[n.src]=per[n.src]||{n:0,net:0};per[n.src].n++;
+  const tags=[];
+  if(n.ai){const f=n.ai.f;if(f&&W[f]){const p=n.ai.risk/5*n.ai.rel*dec*3;aiTot[f]=(aiTot[f]||0)+p;per[n.src].net+=p;tags.push(f+(p>=0?'↑':'↓'))}rows.push({n,tags});return}
+  for(const f in KW){
+   const up=KW[f].u.test(n.title),dn=KW[f].d.test(n.title);
+   if(!up&&!dn)continue;
+   const sev=dn?-1:1;tags.push(f+(sev>0?'↑':'↓'));
+   (hits[f][n.src]=hits[f][n.src]||[]).push({sev,rel,dec,rum:!!n.rumor});
+  }
+  rows.push({n,tags});
+ });
+ const nets={};
+ for(const f in hits){
+  const srcs=Object.keys(hits[f]);
+  const corro=srcs.filter(s=>REL[s]>.35).length;
+  let tot=0;
+  srcs.forEach(s=>hits[f][s].forEach(h=>{
+   let p=h.sev*h.rel*h.dec*1.2;
+   if(h.rum&&h.sev>0&&corro<3)p=0;
+   if(corro>=3&&h.sev>0)p*=1.25;
+   tot+=p;per[s]&&(per[s].net+=p)}));
+  adj[f]+=clamp(tot+(aiTot[f]||0),-15,15);
+ }
+ const F={},R0=Object.keys(W).reduce((a,k)=>a+W[k]*BASE[k],0);
+ let R=0;for(const k in W){F[k]=clamp(BASE[k]+adj[k],0,100);R+=W[k]*F[k]}
+ const secs=clamp(85*(100-R)/(100-R0),1,600);
+ return {F,R,R0,secs,adj,per,rows};
+}
+function clock(s){
+ const mins=s/60,ang=-mins*6;let t='';
+ for(let i=0;i<60;i++){const a=i*6*Math.PI/180,r1=i%5?104:98;t+=`<line x1="${120+Math.sin(a)*110}" y1="${120-Math.cos(a)*110}" x2="${120+Math.sin(a)*r1}" y2="${120-Math.cos(a)*r1}" stroke="var(--mu)" stroke-width="${i%5?1:2}"/>`}
+ const pt=(a,r)=>`${120+Math.sin(a*Math.PI/180)*r},${120-Math.cos(a*Math.PI/180)*r}`;
+ $('clk').innerHTML=`<circle cx="120" cy="120" r="116" fill="var(--card)" stroke="var(--ln)" stroke-width="2"/>
+ <path d="M120,120 L${pt(-90,110)} A110,110 0 0 1 120,10 Z" fill="var(--ac)" opacity=".14"/>${t}
+ <text x="120" y="42" text-anchor="middle" font-size="12">12</text>
+ <line x1="120" y1="120" x2="120" y2="52" stroke="var(--tx)" stroke-width="6" stroke-linecap="round"/>
+ <line x1="120" y1="120" x2="${pt(ang,92).split(',')[0]}" y2="${pt(ang,92).split(',')[1]}" stroke="var(--ac)" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="120" cy="120" r="6" fill="var(--tx)"/>`;
+}
+function render(){
+ const c=compute(),s=Math.round(c.secs);
+ $('today').textContent='Corte: '+todayISO;
+ $('sec').textContent=s+' s';
+ const m=Math.floor(s/60),ss=s%60;
+ $('sub').textContent=`23:${String(59-m-(ss?0:-1)).padStart(2,'0')}:${String((60-ss)%60).padStart(2,'0')} · Δ ${s-85>0?'+':''}${s-85} s vs. enero 2026 (85 s)`;
+ clock(c.secs);
+ $('factors').innerHTML=Object.keys(W).map(k=>`<div class="row"><b>${NAME[k]}</b><div class="bar"><i style="width:${c.F[k]}%"></i></div><span>${c.F[k].toFixed(1)} (${c.adj[k]>=0?'+':''}${c.adj[k].toFixed(1)})</span></div>`).join('');
+ // anuncios
+ const contrib=Object.keys(W).map(k=>({k,v:W[k]*c.F[k],d:W[k]*c.adj[k]})).sort((a,b)=>b.v-a.v);
+ const tot=contrib.reduce((a,x)=>a+x.v,0),top=contrib[0],mov=[...contrib].sort((a,b)=>b.d-a.d)[0];
+ let A=[`<b>Factor dominante:</b> ${NAME[top.k]} aporta el ${(top.v/tot*100).toFixed(0)}% del índice (peso ${W[top.k]*100}% × nivel ${c.F[top.k].toFixed(0)}).`];
+ if(mov.d>0)A.push(`<b>Mayor presión desde enero:</b> ${NAME[mov.k]} (+${mov.d.toFixed(2)} puntos de R). Es el factor que más empuja el reloj hacia medianoche.`);
+ A.push(`<b>Lectura de hoy:</b> ${NEWS.length?NEWS.length+' titulares procesados':'sin datos del spider hoy; se usa línea base + condiciones estructurales verificadas'}. R = ${c.R.toFixed(1)} frente a R₀ = ${c.R0.toFixed(1)}.`);
+ const aiR=c.rows.filter(r=>r.n.ai);
+ if(aiR.length){const mr=aiR.reduce((a,r)=>a+r.n.ai.rel,0)/aiR.length,fl={};aiR.forEach(r=>(r.n.ai.flags||[]).forEach(x=>fl[x]=(fl[x]||0)+1));const tf=Object.entries(fl).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k,v])=>`${esc(k)} (${v})`).join(', ');
+  A.push(`<b>Análisis por IA:</b> ${aiR.length} titulares evaluados; confiabilidad media ${Math.round(mr*100)}%${tf?'. Señales más frecuentes: '+tf+'.':'.'}`)}
+ const sv=Object.entries(c.per).filter(([s,v])=>v.n>2);
+ const st=sv.filter(([s])=>s==='RT'),ot=sv.filter(([s])=>s!=='RT'&&REL[s]>.5);
+ if(st.length&&ot.length){const a=st[0][1].net/st[0][1].n,b=ot.reduce((x,[,v])=>x+v.net/v.n,0)/ot.length;
+  A.push(`<b>Divergencia de medios:</b> RT promedia ${a.toFixed(2)} vs. ${b.toFixed(2)} del resto${Math.abs(a-b)>.3?' — diferencia notable; contrasta narrativas antes de concluir.':'; encuadre similar.'}`)}
+ A.push(...STRUCT.map(x=>`<span class="mu">Condición estructural (${NAME[x.f]}, +${x.d}): ${x.t} — ${x.s}</span>`));
+ $('ann').innerHTML=A.map(x=>`<div class="ann">${x}</div>`).join('');
+ // medios
+ const names=[...new Set([...SHOWN,...Object.keys(c.per)])];
+ $('src').innerHTML='<tr><th>Medio</th><th>Fiab.</th><th>Titulares</th><th>Tipo</th></tr>'+names.map(s=>{const r=REL[s]??.5;return `<tr><td>${s}</td><td>${r.toFixed(2)}</td><td>${(c.per[s]||{n:0}).n}</td><td><span class="tag ${r<.4?'r':''}">${r<.4?'rumor':s==='RT'?'estatal':'prensa'}</span></td></tr>`}).join('');
+ $('news').innerHTML=c.rows.length?c.rows.slice(0,40).map(({n,tags})=>`<tr><td>${n.src}</td><td>${n.url?`<a href="${n.url}" rel="noopener" target="_blank" style="color:var(--tx)">${esc(n.title)}</a>`:esc(n.title)}</td><td>${tags.join(' ')}${n.ai?` <span class="tag">riesgo ${n.ai.risk>0?'+':''}${n.ai.risk}</span> <span class="tag">conf. ${Math.round(n.ai.rel*100)}%</span> <span class="tag">${n.ai.rep||0} confiables · ${n.ai.rum||0} extraoficiales</span> ${(n.ai.flags||[]).map(x=>`<span class="tag r">${esc(x)}</span>`).join(' ')}<div class="mu">${esc(n.ai.why||'')}</div>`:''}</td></tr>`).join(''):'<tr><td class="mu">Aún no hay titulares: corre el spider o pega su JSON.</td></tr>';
+ hist(s);
+}
+function esc(t){return String(t).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))}
+// Ajustes oficiales del Bulletin: [año, segundos a medianoche] (verificar en thebulletin.org)
+const OFF=[[1947,420],[1949,180],[1953,120],[1960,420],[1963,720],[1968,420],[1969,600],[1972,720],[1974,540],[1980,420],[1981,240],[1984,180],[1988,360],[1990,600],[1991,1020],[1995,840],[1998,540],[2002,420],[2007,300],[2010,360],[2012,300],[2015,180],[2017,150],[2018,120],[2020,100],[2023,90],[2025,89],[2026,85]];
+const offAt=y=>OFF.filter(o=>o[0]<=y).pop()[1];
+const iso=ms=>new Date(ms).toISOString().slice(0,10);
+let HIST={};
+function chart(id,S,o){
+ const all=S.flatMap(s=>s.p);
+ const xs=all.map(p=>p[0]),ys=all.map(p=>p[1]);
+ const x0=Math.min(...xs),x1=Math.max(...xs);let lo=Math.min(...ys),hi=Math.max(...ys);
+ if(hi-lo<4){lo-=2;hi+=2}
+ const f=o.log?Math.log:v=>v,a=f(lo),b=f(hi);
+ const X=x=>34+(x1>x0?(x-x0)/(x1-x0):.5)*256,Y=y=>108-(f(y)-a)/(b-a)*92;
+ let h='<line x1="34" y1="108" x2="290" y2="108" stroke="var(--ln)"/>';
+ S.forEach(s=>{if(!s.p.length)return;
+  const d=s.p.map((q,i)=>i?(s.step?`H${X(q[0])}V${Y(q[1])}`:`L${X(q[0])},${Y(q[1])}`):`M${X(q[0])},${Y(q[1])}`).join('');
+  h+=`<path d="${d}" fill="none" stroke="var(--ac)" stroke-width="${s.dash?1.5:2}" ${s.dash?'stroke-dasharray="4 3" opacity=".6"':''}/>`;
+  if(s.dots)h+=s.p.map(q=>`<circle cx="${X(q[0])}" cy="${Y(q[1])}" r="2.5" fill="var(--ac)"/>`).join('')});
+ h+=`<text x="30" y="${Y(hi)+3}" text-anchor="end" font-size="8">${Math.round(hi)} s</text><text x="30" y="${Y(lo)+3}" text-anchor="end" font-size="8">${Math.round(lo)} s</text><text x="34" y="122" font-size="8">${o.l0}</text><text x="290" y="122" text-anchor="end" font-size="8">${o.l1}</text>`;
+ $(id).innerHTML=h;
+}
+function hist(s){
+ let L={};
+ try{L=JSON.parse(localStorage.getItem('dc_hist')||'{}');L[todayISO]=s;localStorage.setItem('dc_hist',JSON.stringify(L))}catch(e){}
+ const H=Object.assign({},L);
+ for(const k in HIST)H[k]=HIST[k];
+ H[todayISO]=s;
+ const yrs=[1947];for(let y=1950;y<=2025;y+=5)yrs.push(y);yrs.push(2026);
+ chart('h5',[{p:yrs.map(y=>[y,offAt(y)]),step:1,dots:1}],{log:1,l0:'1947',l1:'2026'});
+ $('c5').textContent='Valores oficiales del Bulletin al inicio de cada año muestreado (escala logarítmica). Entre muestras hubo cambios, p. ej. 17 min en 1991.';
+ const D=864e5,t=Date.parse(todayISO),y0=t-365*D,j=Date.parse('2026-01-27');
+ const offP=[[y0,y0<Date.parse('2025-01-28')?90:89]];
+ if(j>y0)offP.push([j-D,89],[j,85]);
+ offP.push([t,85]);
+ const est=m=>Object.keys(H).filter(k=>k>=iso(m)).sort().map(k=>[Date.parse(k),H[k]]);
+ const e1=est(y0),e30=est(t-30*D);
+ chart('h1',[{p:offP,dash:1},{p:e1,dots:e1.length<40}],{l0:iso(y0),l1:todayISO});
+ $('c1').textContent=`Punteada: ajuste oficial (89 → 85 s el 27/01/2026). Sólida: estimación diaria (${e1.length} lectura(s)).`;
+ chart('h30',[{p:e30,dots:1}],{l0:iso(t-30*D),l1:todayISO});
+ $('c30').textContent=`${e30.length} lectura(s) en 30 días${e30.length<2?': se necesitan al menos 2 días para trazar la línea.':'.'}`;
+}
+function load(x){if(!x)return;if(Array.isArray(x))NEWS=x;else{NEWS=x.news||[];HIST=x.history||{}}render()}
+$('apply').onclick=()=>{try{load(JSON.parse($('paste').value))}catch(e){alert('JSON inválido')}};
+$('copy').onclick=()=>{try{navigator.clipboard.writeText($('py').textContent)}catch(e){}};
+$('copy2').onclick=()=>{try{navigator.clipboard.writeText($('py2').textContent)}catch(e){}};
+render();
+const API='data.json'; // en producción: 'https://USUARIO.pythonanywhere.com/data.json'
+fetch(API,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(load).catch(()=>{});
+</script>
+</body>
+</html>
