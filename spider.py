@@ -18,9 +18,14 @@ FEEDS = {
 REL = {"Reuters":.95,"NYTimes":.9,"BBC":.9,"CNN":.8,"Reforma":.8,"Radio Fórmula":.7,"RT":.5,"Reddit r/worldnews":.3}
 W = dict(N=.40, C=.25, B=.15, I=.10, G=.10)
 BASE = dict(N=78, C=70, B=55, I=60, G=75)
-STRUCT = [("N", 3), ("N", 2)]
+# v2 (2026-11-21): opción A del backtest + corrección "missile".
+# N se mantiene en +5. C pasa de 0 a +5 por la anomalía 2025 de Copernicus
+# (+1.47 °C vs 1850-1900): C_struct = clamp(round((1.47 - 1.0) * 10), -5, +10) = +5.
+STRUCT = [("N", 3), ("N", 2), ("C", 5)]
 KW = {k: (re.compile(u, re.I), re.compile(d, re.I)) for k, (u, d) in {
- "N": (r"nuclear|oreshnik|icbm|warhead|ojiva|misil|new start|escalat|escalada|nuke", r"arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad"),
+ # v2: se agregó "missile" (inglés); "misil" no casaba con "missile" y los ataques
+ # con misiles solo puntuaban en G, no en N.
+ "N": (r"nuclear|oreshnik|icbm|warhead|ojiva|misil|missile|new start|escalat|escalada|nuke", r"arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad"),
  "C": (r"heatwave|ola de calor|record temperature|wildfire|incendio|flood|inundaci|hurricane|huracán|emissions rise|coal", r"climate deal|acuerdo climático|emissions fall|renewable record|cop\d+ agree"),
  "B": (r"pandemic|pandemia|outbreak|brote|h5n1|avian flu|gripe aviar|virus|bioweapon|lab leak", r"vaccine approved|vacuna aprobada|outbreak contained|brote controlado"),
  "I": (r"artificial intelligence|inteligencia artificial|\bai\b|deepfake|autonomous weapon|agi|chatbot", r"ai treaty|ai regulation passed|regulaci[oó]n de ia|ai safety agreement"),
@@ -123,6 +128,41 @@ def analyze(items):
         except Exception:
             pass
 
+
+# v3 (2026-11-26): análisis experto cada 3 días (OpenRouter) -> data.json["analysis"].
+# Nunca rompe la corrida diaria: si la API falla, se conserva el análisis anterior.
+ANALYSIS_DAYS = 3
+ANALYSIS_PROMPT = """Eres un experto en geopolítica, armas nucleares, armas biológicas e inteligencia artificial. Escribe un resumen breve (máximo 150 palabras, en español, tono sobrio, sin sensacionalismo) con tu crítica de las noticias recientes: qué presiones dominan, qué señales son de segundo orden o ruido, y qué no justifica alarma. Sin títulos ni listas. Devuelve SOLO el texto del resumen."""
+
+def need_analysis(old):
+    a = old.get("analysis") or {}
+    try:
+        d = D.fromisoformat(a.get("date", "2000-01-01"))
+    except Exception:
+        return True
+    return (today - d).days >= ANALYSIS_DAYS
+
+def generate_analysis(items):
+    if not KEY or not items: return None
+    recent = sorted(items, key=lambda n: n["date"], reverse=True)[:30]
+    lines = []
+    for n in recent:
+        ai = n.get("ai") or {}
+        lines.append({"date": n["date"], "src": n["src"], "title": n["title"],
+                      "f": ai.get("f"), "risk": ai.get("risk"), "why": ai.get("why")})
+    body = json.dumps({"model": MODEL, "max_tokens": 800, "temperature": 0.3,
+        "messages": [{"role": "system", "content": ANALYSIS_PROMPT},
+                     {"role": "user", "content": json.dumps(lines, ensure_ascii=False)}]}).encode()
+    rq = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", body,
+        {"content-type": "application/json", "Authorization": "Bearer " + KEY,
+         "X-Title": "reloj-apocalipsis"})
+    try:
+        txt = json.load(urllib.request.urlopen(rq, timeout=120))["choices"][0]["message"]["content"]
+    except Exception as ex:
+        print("Análisis experto falló:", ex); return None
+    txt = (txt or "").strip()
+    return txt or None
+
 old = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else {}
 today = D.today()
 seen, arch = set(), []
@@ -142,5 +182,12 @@ for n in new + old.get("news", []):
     seen.add(k); arch.append(n)
 hist = old.get("history", {})
 hist[today.isoformat()] = score(arch, today)
-json.dump({"updated": today.isoformat(), "news": arch, "history": hist},
+analysis = old.get("analysis") or {}
+if need_analysis(old):
+    try:
+        txt = generate_analysis(arch)
+        if txt: analysis = {"date": today.isoformat(), "text": txt}
+    except Exception as ex:
+        print("Análisis experto falló, se conserva el anterior:", ex)
+json.dump({"updated": today.isoformat(), "news": arch, "history": hist, "analysis": analysis},
           open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
