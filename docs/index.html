@@ -54,6 +54,11 @@ svg text{fill:var(--tx);font-family:system-ui,sans-serif}
  </div>
 </div>
 
+<div class="card"><h2>Cómo se hace esta estimación</h2>
+<p class="mu">Cada día, el spider recoge titulares de 6 medios de los últimos 45 días, una IA los clasifica por factor y riesgo (−5 a +5), y el índice se calcula con la fórmula de arriba. Sobre esa señal diaria se suma un componente estructural de datos duros, que cambia despacio:</p>
+<div id="struct"></div>
+<p class="mu" id="estmeta"></p></div>
+
 <div class="card"><h2>Anuncios y conclusiones</h2><div id="ann"></div></div>
 
 <div class="grid">
@@ -68,167 +73,10 @@ svg text{fill:var(--tx);font-family:system-ui,sans-serif}
 <div style="font:600 13px system-ui,sans-serif;margin:14px 0 2px">Último mes (estimación diaria)</div><svg id="h30" viewBox="0 0 300 130" width="100%"></svg><div class="mu" id="c30"></div></div>
 <div class="card"><h2>Titulares procesados (últimos 45 días)</h2><div class="scroll"><table id="news"></table></div></div>
 
-<div class="card"><h2>Spider diario y carga de datos</h2>
-<p class="mu">Una página HTML no puede rastrear otros sitios (CORS y política de seguridad del navegador). Por eso el spider corre fuera, una vez al día (cron o GitHub Actions), acumula 45 días de titulares relevantes, calcula el índice y escribe <code>data.json</code> (titulares + historial diario). Una mini app Flask en PythonAnywhere lo sirve con CORS; pon su URL en la constante <code>API</code> de esta página. También puedes pegar el JSON aquí.</p>
-<textarea id="paste" placeholder='[{"src":"CNN","title":"...","date":"2026-11-02","rumor":0}]'></textarea>
-<button id="apply">Aplicar JSON</button><button id="copy">Copiar spider.py</button><button id="copy2">Copiar app.py</button>
-<details><summary>spider.py (PythonAnywhere → Tasks, diaria)</summary><pre id="py"># pip install --user feedparser   |   Tasks: OPENROUTER_API_KEY=sk-or-... python3 /home/USUARIO/spider.py
-# Sin OPENROUTER_API_KEY (o si la API falla) usa el análisis por palabras clave.
-# Verifica que openrouter.ai esté en la whitelist de tu cuenta.
-# Cuenta gratis: solo salen peticiones a sitios de la whitelist; revisa que
-# cada RSS esté permitido (los que fallen se omiten sin romper el resto).
-import feedparser, json, re, os, urllib.request, datetime as dt
-feedparser.USER_AGENT = "Mozilla/5.0 (investigacion; reloj-apocalipsis)"
-OUT = os.environ.get("DATA_PATH", "/home/USUARIO/data.json")
-D = dt.date
-FEEDS = {
- "CNN": ("http://rss.cnn.com/rss/edition_world.rss", 0),
- "NYTimes": ("https://rss.nytimes.com/services/xml/rss/nyt/World.xml", 0),
- "BBC": ("http://feeds.bbci.co.uk/news/world/rss.xml", 0),
- "RT": ("https://www.rt.com/rss/news/", 0),
- "Radio Fórmula": ("https://www.radioformula.com.mx/rss", 0),   # verificar URL
- "Reddit r/worldnews": ("https://www.reddit.com/r/worldnews/.rss", 1),  # rumor
-}
-REL = {"Reuters":.95,"NYTimes":.9,"BBC":.9,"CNN":.8,"Reforma":.8,"Radio Fórmula":.7,"RT":.5,"Reddit r/worldnews":.3}
-W = dict(N=.40, C=.25, B=.15, I=.10, G=.10)
-BASE = dict(N=78, C=70, B=55, I=60, G=75)
-STRUCT = [("N", 3), ("N", 2)]
-KW = {k: (re.compile(u, re.I), re.compile(d, re.I)) for k, (u, d) in {
- "N": (r"nuclear|oreshnik|icbm|warhead|ojiva|misil|new start|escalat|escalada|nuke", r"arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad"),
- "C": (r"heatwave|ola de calor|record temperature|wildfire|incendio|flood|inundaci|hurricane|huracán|emissions rise|coal", r"climate deal|acuerdo climático|emissions fall|renewable record|cop\d+ agree"),
- "B": (r"pandemic|pandemia|outbreak|brote|h5n1|avian flu|gripe aviar|virus|bioweapon|lab leak", r"vaccine approved|vacuna aprobada|outbreak contained|brote controlado"),
- "I": (r"artificial intelligence|inteligencia artificial|\bai\b|deepfake|autonomous weapon|agi|chatbot", r"ai treaty|ai regulation passed|regulaci[oó]n de ia|ai safety agreement"),
- "G": (r"war|guerra|invasion|invasión|strike|ataque|sanction|sanciones|tension|tensión|ceasefire collapse|missile strike", r"ceasefire|alto el fuego|peace talks|negociaciones de paz|peace deal"),
-}.items()}
-
-def relevant(t):
-    return any(u.search(t) or d.search(t) for u, d in KW.values())
-
-def score(items, today):
-    adj = {k: 0.0 for k in W}
-    for f, v in STRUCT: adj[f] += v
-    hits = {k: {} for k in W}
-    aip = {k: 0.0 for k in W}
-    for n in items:
-        a = (today - D.fromisoformat(n["date"])).days
-        if a not in range(0, 46): continue
-        rel, dec = REL.get(n["src"], .5), .5 ** (a / 20)
-        if "ai" in n:
-            if n["ai"]["f"] in W:
-                aip[n["ai"]["f"]] += n["ai"]["risk"] / 5 * n["ai"]["rel"] * dec * 3
-            continue
-        for f, (u, d) in KW.items():
-            up, dn = u.search(n["title"]), d.search(n["title"])
-            if up or dn:
-                hits[f].setdefault(n["src"], []).append((-1 if dn else 1, rel, dec, n.get("rumor", 0)))
-    for f, h in hits.items():
-        corro = sum(1 for s in h if REL.get(s, .5) &gt; .35)
-        tot = 0
-        for s, lst in h.items():
-            for sev, rel, dec, rum in lst:
-                p = sev * rel * dec * 1.2
-                if rum and sev &gt; 0 and corro &lt; 3: p = 0
-                if corro &gt;= 3 and sev &gt; 0: p *= 1.25
-                tot += p
-        adj[f] += max(-15, min(15, tot + aip[f]))
-    R = sum(W[k] * max(0, min(100, BASE[k] + adj[k])) for k in W)
-    R0 = sum(W[k] * BASE[k] for k in W)
-    return round(max(1, min(600, 85 * (100 - R) / (100 - R0))), 1)
-
-# Modelo de OpenRouter: copia el "slug" exacto de openrouter.ai/models (ej. proveedor/modelo).
-# Puedes cambiarlo sin tocar el codigo con la variable OPENROUTER_MODEL.
-MODEL = os.environ.get("OPENROUTER_MODEL") or "openai/gpt-4o-mini"
-KEY = os.environ.get("OPENROUTER_API_KEY", "")
-PROMPT = """Eres analista de riesgo global para un índice tipo Reloj del Apocalipsis.
-Para cada titular devuelve SOLO una lista JSON de objetos:
-{"i": n, "f": "N|C|B|I|G|none", "risk": -5 a 5, "rel": 0 a 1, "flags": [...], "why": "máx. 15 palabras"}
-f: N nuclear, C clima, B biológico, I inteligencia artificial, G geopolítica.
-risk positivo aumenta el riesgo, negativo lo reduce, 0 si es irrelevante.
-rel = confiabilidad según: fuente (rumor=1 es extraoficial; los medios estatales tienen sesgo propio),
-estilo (lenguaje cargado, sensacionalismo, atribución anónima, falta de datos), replicación
-(rep = medios que lo repiten; rum = fuentes extraoficiales) y plausibilidad.
-Un hecho repetido por medios de bloques opuestos pesa más. Un rumor sin corroboración: rel máximo 0.3.
-flags posibles: sensacionalista, lenguaje_cargado, fuente_anonima, estatal, sin_corroborar,
-corroborado, opinion, propaganda_probable."""
-
-def toks(t):
-    return set(re.findall(r"\w{4,}", t.lower()))
-
-def replication(items):
-    T = [toks(n["title"]) for n in items]
-    for i, n in enumerate(items):
-        rep, rum = set(), set()
-        for j, m in enumerate(items):
-            if i == j or m["src"] == n["src"]: continue
-            u = T[i].union(T[j])
-            if u and len(T[i].intersection(T[j])) / len(u) &gt;= .3:
-                (rum if m.get("rumor") else rep).add(m["src"])
-        n["rep"], n["rum"] = sorted(rep), sorted(rum)
-
-def analyze(items):
-    if not KEY or not items: return
-    del items[120:]   # tope diario de costo
-    replication(items)
-    lines = [{"i": k, "src": n["src"], "rumor": n.get("rumor", 0), "title": n["title"],
-              "rep": n["rep"], "rum": n["rum"]} for k, n in enumerate(items)]
-    body = json.dumps({"model": MODEL, "max_tokens": 8000, "temperature": 0.2,
-        "messages": [{"role": "system", "content": PROMPT},
-                     {"role": "user", "content": json.dumps(lines, ensure_ascii=False)}]}).encode()
-    rq = urllib.request.Request("https://openrouter.ai/api/v1/chat/completions", body,
-        {"content-type": "application/json", "Authorization": "Bearer " + KEY,
-         "X-Title": "reloj-apocalipsis"})
-    try:
-        txt = json.load(urllib.request.urlopen(rq, timeout=180))["choices"][0]["message"]["content"]
-        res = json.loads(re.search(r"\[.*\]", txt, re.S).group(0))
-    except Exception as ex:
-        print("IA falló, se usan palabras clave:", ex); return
-    for r in res:
-        try:
-            n = items[int(r["i"])]
-            prior = REL.get(n["src"], .5)
-            ai = min(1, max(0, float(r["rel"])))
-            rsc = min(1, (len(n["rep"]) + .5 * len(n["rum"])) / 3)
-            n["ai"] = {"f": r["f"] if r["f"] in W else None,
-                       "risk": max(-5, min(5, float(r["risk"]))),
-                       "rel": round(.35 * prior + .40 * ai + .25 * rsc, 2),   # fuente + IA + replicación
-                       "flags": [str(x) for x in r.get("flags", [])][:4],
-                       "why": str(r.get("why", ""))[:120],
-                       "rep": len(n["rep"]), "rum": len(n["rum"])}
-        except Exception:
-            pass
-
-old = json.load(open(OUT, encoding="utf-8")) if os.path.exists(OUT) else {}
-today = D.today()
-seen, arch = set(), []
-new = []
-for src, (url, rumor) in FEEDS.items():
-    try:
-        for e in feedparser.parse(url).entries[:80]:
-            if relevant(e.title):
-                new.append({"src": src, "title": e.title, "url": e.link,
-                            "date": today.isoformat(), "rumor": rumor})
-    except Exception as ex:
-        print(src, "falló:", ex)
-analyze(new)
-for n in new + old.get("news", []):
-    k = (n["src"], n["title"])
-    if k in seen or (today - D.fromisoformat(n["date"])).days &gt; 45: continue
-    seen.add(k); arch.append(n)
-hist = old.get("history", {})
-hist[today.isoformat()] = score(arch, today)
-json.dump({"updated": today.isoformat(), "news": arch, "history": hist},
-          open(OUT, "w", encoding="utf-8"), ensure_ascii=False)
-</pre>
-<p class="mu">app.py (pestaña Web → Flask) sirve el JSON con CORS:</p>
-<pre id="py2">from flask import Flask, send_file
-app = Flask(__name__)
-
-@app.route("/data.json")
-def data():
-    r = send_file("/home/USUARIO/data.json", mimetype="application/json")
-    r.headers["Access-Control-Allow-Origin"] = "*"
-    r.headers["Cache-Control"] = "no-cache"
-    return r</pre></details></div>
+<div class="card"><h2>Análisis</h2>
+<p class="mu">Lectura experta de las noticias analizadas por el índice. Se actualiza cada tres días; el número diario sigue actualizándose a diario.</p>
+<div id="analysis"><p>La presión de los últimos días se concentra en geopolítica, no en un solo frente. La guerra en Ucrania se está ensanchando: los ataques contra buques rusos frente a Libia, que Trípoli califica de acto de guerra, abren un teatro nuevo, mientras Rusia reconoce casi medio millón de bajas propias. En paralelo, Gaza suma escaladas puntuales y Yemen se mueve con el avance hutí. El riesgo nuclear no sube por un despliegue nuevo, sino por dos señales de segundo orden: los reportes sobre un satélite nuclear ruso, que llevaron a la OTAN a hablar de amenaza espacial, y el temor chino a que la IA altere el equilibrio nuclear. La inteligencia artificial aparece así como multiplicador del riesgo estratégico, también en desinformación dirigida a Taiwán. La declaración conjunta de paz de Putin, Trump y Xi es la única señal de distensión, pero llega vía RT y sin verificación independiente, así que pesa poco.</p></div>
+<p class="mu" id="analysis-date">Primera lectura: 26 de noviembre de 2026.</p></div>
 <div class="card"><h2>Apoya el proyecto</h2>
 <p class="mu">El spider, la IA y el hosting tienen costo. Los donativos y anuncios sostienen el proyecto y <b>nunca influyen en el índice ni en la confiabilidad asignada a un medio</b>.</p>
 
@@ -256,9 +104,10 @@ const REL={'Reuters':.95,'NYTimes':.9,'BBC':.9,'CNN':.8,'Reforma':.8,'Radio Fór
 const SHOWN=['CNN','NYTimes','BBC','Reuters','Reforma','Radio Fórmula','RT'];
 const STRUCT=[
  {f:'N',d:3,t:'Expiró New START (5 feb 2026): sin límites a arsenales EE. UU.–Rusia',s:'The Defense Post'},
- {f:'N',d:2,t:'Rusia usó dos veces el misil Oreshnik; la OTAN habla de “señalización nuclear” (abr 2026)',s:'Reuters vía Al-Monitor'}];
+ {f:'N',d:2,t:'Rusia usó dos veces el misil Oreshnik; la OTAN habla de “señalización nuclear” (abr 2026)',s:'Reuters vía Al-Monitor'},
+ {f:'C',d:5,t:'Anomalía de temperatura 2025: +1.47 °C sobre la era preindustrial (Copernicus)',s:'Copernicus'}];
 const KW={
- N:{u:/nuclear|oreshnik|icbm|warhead|ojiva|misil|new start|escalat|escalada|nuke/i,d:/arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad/i},
+ N:{u:/nuclear|oreshnik|icbm|warhead|ojiva|misil|missile|new start|escalat|escalada|nuke/i,d:/arms control deal|desarme|treaty signed|acuerdo nuclear|de-escalat|desescalad/i},
  C:{u:/heatwave|ola de calor|record temperature|wildfire|incendio|flood|inundaci|hurricane|huracán|emissions rise|coal/i,d:/climate deal|acuerdo climático|emissions fall|renewable record|cop\d+ agree/i},
  B:{u:/pandemic|pandemia|outbreak|brote|h5n1|avian flu|gripe aviar|virus|bioweapon|lab leak/i,d:/vaccine approved|vacuna aprobada|outbreak contained|brote controlado/i},
  I:{u:/artificial intelligence|inteligencia artificial|\bai\b|deepfake|autonomous weapon|agi|chatbot/i,d:/ai treaty|ai regulation passed|regulaci[oó]n de ia|ai safety agreement/i},
@@ -267,6 +116,8 @@ const $=id=>document.getElementById(id);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const todayISO=new Date().toISOString().slice(0,10);
 let NEWS=[];
+let UPDATED='—';
+let ANALYSIS=null;
 function age(d){return Math.max(0,(Date.parse(todayISO)-Date.parse(d))/864e5)}
 function compute(){
  const adj={N:0,C:0,B:0,I:0,G:0},per={},aiTot={},hits={N:{},C:{},B:{},I:{},G:{}},rows=[];
@@ -320,6 +171,10 @@ function render(){
  $('sub').textContent=`23:${String(59-m-(ss?0:-1)).padStart(2,'0')}:${String((60-ss)%60).padStart(2,'0')} · Δ ${s-85>0?'+':''}${s-85} s vs. enero 2026 (85 s)`;
  clock(c.secs);
  $('factors').innerHTML=Object.keys(W).map(k=>`<div class="row"><b>${NAME[k]}</b><div class="bar"><i style="width:${c.F[k]}%"></i></div><span>${c.F[k].toFixed(1)} (${c.adj[k]>=0?'+':''}${c.adj[k].toFixed(1)})</span></div>`).join('');
+ $('struct').innerHTML=STRUCT.map(x=>`<div class="row"><b>${NAME[x.f]} +${x.d}</b><span style="flex:1;text-align:left;width:auto">${x.t} — <span class="mu">${x.s}</span></span></div>`).join('');
+ const aiN=c.rows.filter(r=>r.n.ai).length;
+ $('estmeta').textContent=`Última corrida del spider: ${UPDATED} · ${NEWS.length} titulares en la ventana de 45 días · ${aiN} evaluados por IA (el resto, por palabras clave).`;
+ if(ANALYSIS&&ANALYSIS.text){$('analysis').innerHTML=`<p>${esc(ANALYSIS.text)}</p>`;$('analysis-date').textContent='Actualizado: '+ANALYSIS.date+' · se regenera cada 3 días.'}
  // anuncios
  const contrib=Object.keys(W).map(k=>({k,v:W[k]*c.F[k],d:W[k]*c.adj[k]})).sort((a,b)=>b.v-a.v);
  const tot=contrib.reduce((a,x)=>a+x.v,0),top=contrib[0],mov=[...contrib].sort((a,b)=>b.d-a.d)[0];
@@ -382,10 +237,10 @@ function hist(s){
  chart('h30',[{p:e30,dots:1}],{l0:iso(t-30*D),l1:todayISO});
  $('c30').textContent=`${e30.length} lectura(s) en 30 días${e30.length<2?': se necesitan al menos 2 días para trazar la línea.':'.'}`;
 }
-function load(x){if(!x)return;if(Array.isArray(x))NEWS=x;else{NEWS=x.news||[];HIST=x.history||{}}render()}
-$('apply').onclick=()=>{try{load(JSON.parse($('paste').value))}catch(e){alert('JSON inválido')}};
-$('copy').onclick=()=>{try{navigator.clipboard.writeText($('py').textContent)}catch(e){}};
-$('copy2').onclick=()=>{try{navigator.clipboard.writeText($('py2').textContent)}catch(e){}};
+function load(x){if(!x)return;if(Array.isArray(x))NEWS=x;else{NEWS=x.news||[];HIST=x.history||{};UPDATED=x.updated||UPDATED;ANALYSIS=x.analysis||null}render()}
+
+
+
 render();
 const API='data.json'; // en producción: 'https://USUARIO.pythonanywhere.com/data.json'
 fetch(API,{cache:'no-store'}).then(r=>r.ok?r.json():null).then(load).catch(()=>{});
